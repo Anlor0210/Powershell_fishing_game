@@ -93,6 +93,23 @@ def compute_save_signature(data: Dict) -> str:
     key = SAVE_SIGNATURE_KEY.encode('utf-8')
     return hmac.new(key, serialized.encode('utf-8'), hashlib.sha256).hexdigest()
 
+# [FISH_TRAP HELPERS]
+
+def format_remaining_time(seconds: float) -> str:
+    """Return human readable H:M:S string for given seconds."""
+    if seconds <= 0:
+        return "0s"
+    m, s = divmod(int(seconds), 60)
+    h, m = divmod(m, 60)
+    parts = []
+    if h:
+        parts.append(f"{h}h")
+    if m:
+        parts.append(f"{m}m")
+    if s or not parts:
+        parts.append(f"{s}s")
+    return " ".join(parts)
+
 # Boss spawn chance configuration
 BASE_BOSS_CHANCE = 0.10  # existing base chance (10%)
 BOSS_BONUS_PER_STREAK = 0.005  # additional 0.5% per streak
@@ -323,6 +340,27 @@ DAILY_EVENT_EFFECTS = {
     "Full Moon Night": "Exotic+Boss boosted",
 }
 
+# [FISH_TRAP CONSTANTS]
+REAL_SECONDS_PER_INGAME_DAY = 60 * 60 * 24
+TRAP_OVERDUE_SECONDS = 60 * 60 * 12
+TRAP_MAX_ACTIVE = 10
+TRAP_CAPACITY_MAX = 50
+
+BAIT_PRICES = {
+    "trap": 1500,
+    "normal": 1000,
+    "advanced": 5000,
+    "expert": 100000,
+    "legend": 1500000,
+}
+
+BAIT_RARITY_MAP = {
+    "normal": ["Common", "Uncommon"],
+    "advanced": ["Rare", "Epic"],
+    "expert": ["Legendary", "Mythical"],
+    "legend": ["Exotic", "???"],
+}
+
 @dataclass
 class Quest:
     """Represents a quest tied to a specific zone."""
@@ -542,6 +580,10 @@ class Game:
         self.loaded_quests: Dict[str, List[Dict]] = {}
         self.daily_event: Optional[str] = None
         self.daily_event_day: int = self.current_day
+        # [FISH_TRAP fields]
+        self.inventory_fish_traps = 0
+        self.baits = {"normal": 0, "advanced": 0, "expert": 0, "legend": 0}
+        self.active_traps: List[Dict] = []
         # load existing data if any
         self.load_game()
         self.quest_manager = QuestManager(self.loaded_quests)
@@ -574,6 +616,9 @@ class Game:
             'fastFishingPrice': self.fast_fishing_price,
             'dailyEvent': self.daily_event,
             'dailyEventDay': self.daily_event_day,
+            'inventoryFishTraps': self.inventory_fish_traps,
+            'baits': self.baits,
+            'activeTraps': self.active_traps,
         }
         data_to_sign = data.copy()
         data['sig'] = compute_save_signature(data_to_sign)
@@ -612,6 +657,9 @@ class Game:
             self.daily_event_day = data.get('dailyEventDay', self.current_day)
             self.discovery = data.get('discovery', {})
             self.loaded_quests = data.get('quests', {})
+            self.inventory_fish_traps = data.get('inventoryFishTraps', 0)
+            self.baits = data.get('baits', {"normal": 0, "advanced": 0, "expert": 0, "legend": 0})
+            self.active_traps = data.get('activeTraps', [])
         else:
             # defaults already set
             self.loaded_quests = {}
@@ -1154,6 +1202,11 @@ class Game:
             else:
                 print("Floating Island: Hidden (12–16h window)")
         print("Version: Beta")
+        print(
+            f"Fish Traps: {self.inventory_fish_traps} | "
+            f"Bait N:{self.baits['normal']} A:{self.baits['advanced']} "
+            f"E:{self.baits['expert']} L:{self.baits['legend']}"
+        )
         print("1. Fishing")
         print("2. Fast Fishing (Catch multiple fish at once)")
         print("3. Zone")
@@ -1163,6 +1216,8 @@ class Game:
         print("7. Discovery Book")
         print("8. Quest")
         print("9. Exit game")
+        print("10. Fish Trap Shop   (buy traps & bait)")
+        print("11. Fish Trap        (manage traps)")
 
     # -------------- Fishing --------------
     def start_fishing(self):
@@ -1611,11 +1666,285 @@ class Game:
         self.save_game()
         time.sleep(2)
 
+    # [FISH_TRAP SHOP]
+    def bait_trap_shop_menu(self):
+        while True:
+            clear_screen()
+            print("Fish Trap Shop")
+            print(f"Balance: {round(self.balance,2)}$")
+            print(
+                f"1. Fish Trap - {BAIT_PRICES['trap']}$ (Stock: {self.inventory_fish_traps})"
+            )
+            print(
+                f"2. Normal Bait - {BAIT_PRICES['normal']}$ (Stock: {self.baits['normal']})"
+            )
+            print(
+                f"3. Advanced Bait - {BAIT_PRICES['advanced']}$ (Stock: {self.baits['advanced']})"
+            )
+            print(
+                f"4. Expert Bait - {BAIT_PRICES['expert']}$ (Stock: {self.baits['expert']})"
+            )
+            print(
+                f"5. Legend Bait - {BAIT_PRICES['legend']}$ (Stock: {self.baits['legend']})"
+            )
+            print("0. Return")
+            choice = input("Choose item: ")
+            if choice == '0':
+                return
+            mapping = {'1': 'trap', '2': 'normal', '3': 'advanced', '4': 'expert', '5': 'legend'}
+            if choice not in mapping:
+                print("Invalid choice.")
+                time.sleep(2)
+                continue
+            qty = input("Quantity to buy: ")
+            if not qty.isdigit() or int(qty) <= 0:
+                print("Invalid quantity.")
+                time.sleep(2)
+                continue
+            qty = int(qty)
+            item = mapping[choice]
+            cost = BAIT_PRICES[item] * qty
+            if self.balance < cost:
+                print("Not enough balance.")
+                time.sleep(2)
+                continue
+            self.balance -= cost
+            if item == 'trap':
+                self.inventory_fish_traps += qty
+            else:
+                self.baits[item] += qty
+            print("Purchase successful!")
+            self.save_game()
+            time.sleep(2)
+
+    # [FISH_TRAP HELPERS]
+    def get_active_traps(self):
+        return self.active_traps
+
+    def add_active_trap(self, trap: Dict):
+        self.active_traps.append(trap)
+
+    def remove_active_trap(self, idx: int):
+        if 0 <= idx < len(self.active_traps):
+            self.active_traps.pop(idx)
+
+    # [FISH_TRAP MENU]
+    def fish_trap_menu(self):
+        while True:
+            clear_screen()
+            print("Fish Trap")
+            print("1. Set Fish Trap")
+            print("2. Check Fish Trap")
+            print("0. Return to menu")
+            choice = input("Choose: ")
+            if choice == '1':
+                self.set_fish_trap_menu()
+            elif choice == '2':
+                self.check_fish_trap_menu()
+            elif choice == '0':
+                return
+            else:
+                print("Invalid choice.")
+                time.sleep(1)
+
+    def set_fish_trap_menu(self):
+        if self.inventory_fish_traps < 1 or all(v == 0 for v in self.baits.values()):
+            print("You need a Fish Trap and bait to set a trap.")
+            time.sleep(2)
+            return
+        if len(self.active_traps) >= TRAP_MAX_ACTIVE:
+            print("You have reached the active trap limit (10).")
+            time.sleep(2)
+            return
+        zones = self.get_unlocked_zones()
+        while True:
+            clear_screen()
+            print("Choose zone:")
+            for idx, z in enumerate(zones, 1):
+                print(f"{idx}. {z}")
+            print("0. Cancel")
+            choice = input("Zone: ")
+            if choice == '0':
+                return
+            if choice.isdigit() and 1 <= int(choice) <= len(zones):
+                zone = zones[int(choice) - 1]
+                break
+            else:
+                print("Invalid choice.")
+                time.sleep(1)
+        available = [b for b, c in self.baits.items() if c > 0]
+        bait_names = {
+            'normal': 'Normal Bait',
+            'advanced': 'Advanced Bait',
+            'expert': 'Expert Bait',
+            'legend': 'Legend Bait',
+        }
+        while True:
+            clear_screen()
+            print("Choose bait:")
+            for idx, b in enumerate(available, 1):
+                print(f"{idx}. {bait_names[b]} (Stock: {self.baits[b]})")
+            print("0. Cancel")
+            choice = input("Bait: ")
+            if choice == '0':
+                return
+            if choice.isdigit() and 1 <= int(choice) <= len(available):
+                bait = available[int(choice) - 1]
+                break
+            else:
+                print("Invalid choice.")
+                time.sleep(1)
+        self.inventory_fish_traps -= 1
+        self.baits[bait] -= 1
+        trap = {
+            'zone': zone,
+            'bait': bait,
+            'real_start_ts': time.time(),
+            'duration_seconds': REAL_SECONDS_PER_INGAME_DAY,
+            'overdue_seconds': TRAP_OVERDUE_SECONDS,
+            'capacity_max': TRAP_CAPACITY_MAX,
+            'caught_count': 0,
+        }
+        self.add_active_trap(trap)
+        self.save_game()
+        print(f"Fish Trap set in {zone} using {bait_names[bait]}.")
+        time.sleep(2)
+
+    def check_fish_trap_menu(self):
+        if not self.active_traps:
+            print("No active traps.")
+            time.sleep(2)
+            return
+        bait_names = {
+            'normal': 'Normal Bait',
+            'advanced': 'Advanced Bait',
+            'expert': 'Expert Bait',
+            'legend': 'Legend Bait',
+        }
+        while True:
+            clear_screen()
+            print("Active Fish Traps:")
+            for idx, trap in enumerate(self.active_traps, 1):
+                elapsed = time.time() - trap['real_start_ts']
+                duration = trap['duration_seconds']
+                overdue = trap.get('overdue_seconds', TRAP_OVERDUE_SECONDS)
+                if elapsed >= duration:
+                    status = 'READY'
+                    if elapsed >= duration + overdue:
+                        status = 'OVERDUE'
+                else:
+                    status = format_remaining_time(duration - elapsed)
+                print(f"{idx}. Fish Trap {idx:02d} - {trap['zone']} ({status})")
+            print("0. Return")
+            choice = input("Select trap: ")
+            if choice == '0':
+                return
+            if not choice.isdigit() or int(choice) < 1 or int(choice) > len(self.active_traps):
+                continue
+            idx = int(choice) - 1
+            trap = self.active_traps[idx]
+            elapsed = time.time() - trap['real_start_ts']
+            duration = trap['duration_seconds']
+            overdue = trap.get('overdue_seconds', TRAP_OVERDUE_SECONDS)
+            if elapsed >= duration + overdue:
+                print("The trap was overdue and broke.")
+                self.remove_active_trap(idx)
+                self.save_game()
+                time.sleep(2)
+                continue
+            if elapsed >= duration:
+                results, _ = self.resolve_trap(trap)
+                self.remove_active_trap(idx)
+                self.save_game()
+                print(f"You collected {len(results)} fish!")
+                time.sleep(2)
+                continue
+            remaining = duration - elapsed
+            clear_screen()
+            print(f"Fish caught: {trap['caught_count']}/{trap['capacity_max']}")
+            print(f"Remaining time: {format_remaining_time(remaining)}")
+            print("Bait: " + bait_names.get(trap['bait'], ''))
+            input("Press Enter to return...")
+
+    def resolve_trap(self, trap: Dict):
+        zone = trap['zone']
+        bait = trap['bait']
+        fish_list = self.get_fish_list_for_zone(zone)
+        results = []
+        total_xp = 0
+        count = random.randint(3, 7)
+        for _ in range(count):
+            if bait == 'legend':
+                if random.random() < 0.4:
+                    boss_entry = next((f for f in fish_list if f['rarity'] == '???'), None)
+                    if boss_entry:
+                        weight = random.randint(1000, 10000)
+                        price = boss_entry.get('price', boss_entry.get('base_price', 0))
+                        entry = {
+                            'name': boss_entry['name'],
+                            'rarity': '???',
+                            'price': price,
+                            'weight': weight,
+                            'zone': zone,
+                        }
+                        self.inventory.append(entry.copy())
+                        value = round(weight * price, 2)
+                        self.update_discovery(zone, entry['name'], weight, value)
+                        xp_gain = boss_entry.get('xp', 0)
+                        if self.daily_event == 'Double XP Day':
+                            xp_gain *= 2
+                        self.xp += xp_gain
+                        total_xp += xp_gain
+                        self.quest_manager.update_quest_progress(zone, entry['name'], '???')
+                        results.append(entry)
+                        continue
+                filtered = [f for f in fish_list if f['rarity'] == 'Exotic']
+                if not filtered:
+                    filtered = [f for f in fish_list if f['rarity'] != '???']
+                fish = random.choice(filtered).copy()
+            else:
+                filtered = [
+                    f for f in fish_list
+                    if f['rarity'] in BAIT_RARITY_MAP.get(bait, []) and f['rarity'] != '???'
+                ]
+                if not filtered:
+                    filtered = [f for f in fish_list if f['rarity'] != '???']
+                fish = random.choice(filtered).copy()
+            weight_val = self.generate_weight(fish['name'], fish['rarity'])
+            fish['weight'] = round(weight_val, 1)
+            if zone == 'Sea':
+                price_multiplier = SEA_PRICE_MULTIPLIER.get(fish['rarity'], 1)
+                price = round(fish.get('base_price', fish.get('price', 0)) * price_multiplier, 2)
+            elif zone == 'Bathyal':
+                price = fish.get('base_price', fish.get('price', 0))
+            else:
+                price = fish.get('price', 0)
+            fish['price'] = price
+            entry = {
+                'name': fish['name'],
+                'rarity': fish['rarity'],
+                'price': price,
+                'weight': fish['weight'],
+                'zone': zone,
+            }
+            self.inventory.append(entry.copy())
+            value = round(fish['weight'] * price, 2)
+            self.update_discovery(zone, fish['name'], fish['weight'], value)
+            xp_gain = self.get_xp_by_rarity(fish['rarity'])
+            if self.daily_event == 'Double XP Day':
+                xp_gain *= 2
+            self.xp += xp_gain
+            total_xp += xp_gain
+            self.quest_manager.update_quest_progress(zone, fish['name'], fish['rarity'])
+            results.append(entry)
+        self.check_level_up()
+        return results, total_xp
+
     # -------------- Main loop --------------
     def run(self):
         while True:
             self.show_menu()
-            choice = input("Pick your choice (1-9): ")
+            choice = input("Pick your choice (1-11): ")
             if choice == '1':
                 self.start_fishing()
                 self.advance_time()
@@ -1636,6 +1965,10 @@ class Game:
                 self.show_quest_menu()
             elif choice == '9':
                 break
+            elif choice == '10':
+                self.bait_trap_shop_menu()
+            elif choice == '11':
+                self.fish_trap_menu()
             elif choice == 'admin':
                 self.balance += 1000000000
                 print("🛠️ Admin mode activated! You received 1,000,000,000$")
