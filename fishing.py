@@ -52,6 +52,49 @@ SEASON_EMOJI = {
     "Autumn": "🍂",
     "Winter": "❄️",
 }
+# [SEASONALS]
+SEASONAL_BASE_CHANCE = 0.008   # 0.8% per bite if zone+season matches
+SEASONAL_BOOST_EXPERT = 0.015
+SEASONAL_BOOST_LEGEND = 0.030
+SEASONAL_BOOST_TIMEWINDOW = 0.007  # correct preferred time of day
+SEASONAL_BOOST_EVENT = 0.010       # special event e.g., Full Moon
+SEASONAL_CHANCE_CAP = 0.06         # max 6%
+SEASONAL_MINIGAME_SPEED_MULT = 1.20
+SEASONAL_MINIGAME_ZONE_LEN = 2     # FIXED catch zone length
+SEASONAL_MINIGAME_MARGIN = 1       # grace margin for seasonal fish
+
+SEASONAL_FISH = {
+  "Lake": {
+    "Spring": [{"name":"Sakura Koi","rarity":"Legendary","price":150,"xp":180,"time_of_day":["Day"]}],
+    "Summer": [{"name":"Sun Bass Emperor","rarity":"Legendary","price":200,"xp":250,"time_of_day":["Day"]}],
+    "Autumn": [{"name":"Ruby Salmon","rarity":"Legendary","price":220,"xp":270,"time_of_day":["Sunset"]}],
+    "Winter": [{"name":"Ice Pike","rarity":"Legendary","price":250,"xp":300,"time_of_day":["Night"]}],
+  },
+  "Sea": {
+    "Spring": [{"name":"Coral King Mackerel","rarity":"Legendary","base_price":240,"xp":300,"time_of_day":["Day"]}],
+    "Summer": [{"name":"Sunray Marlin","rarity":"Legendary","base_price":320,"xp":350,"time_of_day":["Day"]}],
+    "Autumn": [{"name":"Typhoon Barracuda","rarity":"Legendary","base_price":350,"xp":400,"time_of_day":["Day"]}],
+    "Winter": [{"name":"Frostfin Tuna","rarity":"Legendary","base_price":400,"xp":480,"time_of_day":["Night"]}],
+  },
+  "Bathyal": {
+    "Spring": [{"name":"Abyssal Lantern Lord","rarity":"Legendary","base_price":260,"xp":320,"time_of_day":["Night"]}],
+    "Summer": [{"name":"Sable Viper King","rarity":"Legendary","base_price":300,"xp":380,"time_of_day":["Night"]}],
+    "Autumn": [{"name":"Harvest Leviathanling","rarity":"Legendary","base_price":350,"xp":420,"time_of_day":["Sunset","Night"]}],
+    "Winter": [{"name":"Frost Maw Angler","rarity":"Legendary","base_price":400,"xp":480,"time_of_day":["Night"]}],
+  },
+  "Mystic Spring": {
+    "Spring": [{"name":"Bloom Trout","rarity":"Legendary","price":180,"xp":220,"time_of_day":["Sunset"]}],
+    "Summer": [{"name":"Crystal Carp","rarity":"Legendary","price":200,"xp":250,"time_of_day":["Day"]}],
+    "Autumn": [{"name":"Amber Eel","rarity":"Legendary","price":240,"xp":280,"time_of_day":["Night"]}],
+    "Winter": [{"name":"Snow Lotus Fish","rarity":"Legendary","price":300,"xp":350,"time_of_day":["Day"]}],
+  },
+  "Ancient Sea": {
+    "Spring": [{"name":"Pearlback Shark","rarity":"Legendary","price":280,"xp":340,"time_of_day":["Day"]}],
+    "Summer": [{"name":"Fire Coral Dragon","rarity":"Legendary","price":380,"xp":420,"time_of_day":["Day"]}],
+    "Autumn": [{"name":"Crimson Leviathan","rarity":"Legendary","price":450,"xp":500,"time_of_day":["Night"]}],
+    "Winter": [{"name":"Frost Dragonfish","rarity":"Legendary","price":650,"xp":700,"time_of_day":["Night"]}],
+  }
+}
 
 # Non-blocking keyboard helpers
 class RawInput:
@@ -341,6 +384,52 @@ ACHIEVEMENTS = {
         "name": "Golden Hand",
         "desc": "Sell fish worth >= $100k",
         "reward": {"money": 5000},
+    },
+    # [SEASONALS]
+    "seasonal_hunter_1": {
+        "name": "Seasonal Hunter I",
+        "desc": "Catch 1 seasonal fish",
+        "reward": {"money": 1000},
+    },
+    "seasonal_hunter_2": {
+        "name": "Seasonal Hunter II",
+        "desc": "Catch 2 seasonal fish",
+        "reward": {"money": 2000},
+    },
+    "seasonal_hunter_3": {
+        "name": "Seasonal Hunter III",
+        "desc": "Catch 3 seasonal fish",
+        "reward": {"money": 3000},
+    },
+    "four_seasons_master_lake": {
+        "name": "Four Seasons Master (Lake)",
+        "desc": "Catch all 4 seasonal fish in Lake",
+        "reward": {"money": 3000},
+    },
+    "four_seasons_master_sea": {
+        "name": "Four Seasons Master (Sea)",
+        "desc": "Catch all 4 seasonal fish in Sea",
+        "reward": {"money": 3000},
+    },
+    "four_seasons_master_bathyal": {
+        "name": "Four Seasons Master (Bathyal)",
+        "desc": "Catch all 4 seasonal fish in Bathyal",
+        "reward": {"money": 4000},
+    },
+    "four_seasons_master_mystic_spring": {
+        "name": "Four Seasons Master (Mystic Spring)",
+        "desc": "Catch all 4 seasonal fish in Mystic Spring",
+        "reward": {"money": 4000},
+    },
+    "four_seasons_master_ancient_sea": {
+        "name": "Four Seasons Master (Ancient Sea)",
+        "desc": "Catch all 4 seasonal fish in Ancient Sea",
+        "reward": {"money": 5000},
+    },
+    "global_seasonal_master": {
+        "name": "Global Seasonal Master",
+        "desc": "Catch all seasonal fish in all zones",
+        "reward": {"money": 10000},
     },
     "event_master": {
         "name": "Event Master",
@@ -816,6 +905,9 @@ class Game:
         self.inventory_fish_traps = 0
         self.baits = {"normal": 0, "advanced": 0, "expert": 0, "legend": 0}
         self.active_traps: List[Dict] = []
+        # [SEASONALS]
+        self.seasonal_log: Dict[str, Dict] = {}
+        self.bait_in_use: str = ""
         # [RUN_SUMMARY] session fields
         self.reset_session_stats()
         # [ACHIEVEMENTS] lifetime progression fields
@@ -862,6 +954,8 @@ class Game:
             'counters': {**self.counters, 'events_caught': list(self.counters.get('events_caught', []))},
             'currentTitle': self.current_title,
             'titleInventory': self.title_inventory,
+            # [SEASONALS_SAVE]
+            'seasonalLog': self.seasonal_log,
         }
         data_to_sign = data.copy()
         data['sig'] = compute_save_signature(data_to_sign)
@@ -909,6 +1003,8 @@ class Game:
             self.counters.update(saved_counters)
             self.current_title = data.get('currentTitle', '')
             self.title_inventory = data.get('titleInventory', [])
+            # [SEASONALS_SAVE]
+            self.seasonal_log = data.get('seasonalLog', {})
             if isinstance(self.counters.get('events_caught'), list):
                 self.counters['events_caught'] = list(self.counters['events_caught'])
         else:
@@ -1059,6 +1155,17 @@ class Game:
         zone_data[fish_name] = entry
         self.discovery[zone] = zone_data
 
+    # [SEASONALS]
+    def update_seasonal_log(self, name: str, weight: float):
+        entry = self.seasonal_log.setdefault(name, {"count": 0, "bestWeight": 0.0, "firstCaughtDay": self.current_day})
+        entry["count"] += 1
+        if weight > entry.get("bestWeight", 0):
+            entry["bestWeight"] = weight
+        if entry.get("firstCaughtDay") is None:
+            entry["firstCaughtDay"] = self.current_day
+        self.seasonal_log[name] = entry
+        self.check_achievements()
+
     # [RUN_SUMMARY] initialize per-session stats
     def reset_session_stats(self):
         self.session_start_ts = time.time()
@@ -1070,6 +1177,8 @@ class Game:
         self.session_boss_kills = 0
         self.session_zones_visited = {self.current_zone}
         self.session_rarest_seen = "Common"
+        # [SEASONALS_UI]
+        self.session_last_seasonal: Optional[Dict] = None
 
     # [RUN_SUMMARY][ACHIEVEMENTS] record a caught fish
     def record_catch(self, entry: Dict, xp_gain: int, new_species: bool = False, is_boss: bool = False):
@@ -1097,6 +1206,8 @@ class Game:
         if is_boss:
             self.session_boss_kills += 1
             self.counters['boss_kills'] += 1
+        if entry.get('is_seasonal'):
+            self.session_last_seasonal = entry.copy()
         # lifetime counters
         c = self.counters
         c['total_fish'] += 1
@@ -1206,6 +1317,16 @@ class Game:
         self.try_unlock('ancient_curator', c['zones_completed'].get('Ancient Sea'))
         self.try_unlock('combo_streaker_1', self.streak >= 10)
         self.try_unlock('combo_streaker_2', self.streak >= 25)
+        total_seasonals = sum(v.get('count', 0) for v in self.seasonal_log.values())
+        self.try_unlock('seasonal_hunter_1', total_seasonals >= 1)
+        self.try_unlock('seasonal_hunter_2', total_seasonals >= 2)
+        self.try_unlock('seasonal_hunter_3', total_seasonals >= 3)
+        for zone, seasons in SEASONAL_FISH.items():
+            names = [f['name'] for lst in seasons.values() for f in lst]
+            key = f"four_seasons_master_{zone.lower().replace(' ', '_')}"
+            self.try_unlock(key, all(n in self.seasonal_log for n in names))
+        all_names = [f['name'] for z in SEASONAL_FISH.values() for lst in z.values() for f in lst]
+        self.try_unlock('global_seasonal_master', all(n in self.seasonal_log for n in all_names))
         self.try_unlock('event_master', len(c.get('events_caught', [])) >= len(DAILY_EVENT_LIST))
 
     # [RUN_SUMMARY] display summary on exit
@@ -1229,6 +1350,11 @@ class Game:
         else:
             print("Best catch: None")
         print(f"Rarest seen: {self.session_rarest_seen}")
+        if self.session_last_seasonal:
+            # [SEASONALS_UI]
+            ss = self.session_last_seasonal
+            val = round(ss['weight'] * ss['price'], 2)
+            print(f"Seasonal Legendary: {ss['name']} — {ss['weight']} kg — ${val}")
         top = sorted(
             self.session_fish_list,
             key=lambda f: f['weight'] * f['price'],
@@ -1366,6 +1492,27 @@ class Game:
                 print("\n>> The boss escaped! <<")
                 input("Press Enter to continue...")
             return None
+        if self.current_zone in SEASONAL_FISH:
+            # [SEASONALS]
+            season_name = self.get_current_season()
+            pool = SEASONAL_FISH[self.current_zone].get(season_name, [])
+            if pool:
+                chance = SEASONAL_BASE_CHANCE
+                if self.bait_in_use == 'expert':
+                    chance += SEASONAL_BOOST_EXPERT
+                if self.bait_in_use == 'legend':
+                    chance += SEASONAL_BOOST_LEGEND
+                tod = self.get_time_of_day()
+                fish_pref = pool[0]
+                if tod in fish_pref.get('time_of_day', []):
+                    chance += SEASONAL_BOOST_TIMEWINDOW
+                if self.event == 'Full Moon':
+                    chance += SEASONAL_BOOST_EVENT
+                chance = min(chance, SEASONAL_CHANCE_CAP)
+                if random.random() < chance:
+                    caught = random.choice(pool).copy()
+                    caught['is_seasonal'] = True
+                    return caught
         time_of_day = self.get_time_of_day()
         season = self.get_current_season()
         filtered: List[Dict] = []
@@ -1717,7 +1864,6 @@ class Game:
             print(line)
             time.sleep(0.3)
         print(f"Current streak: {self.streak}")
-        is_exotic = False
         wait_seconds = 2
         while True:
             print(f"\nWaiting for a bite... (Streak: {self.streak})")
@@ -1728,19 +1874,35 @@ class Game:
                 time.sleep(1)
                 if (self.current_zone == "Bathyal" and self.event == "Full Moon" \
                         and random.randint(1, 100) <= 100):
-                    is_exotic = True
                     print(">>> Something Stranger Bite! <<<")
                     print(">>> Your minigame will x10 speed! <<<")
                     print(">>> Your catch zone will be 2 <<<")
                     success = self.start_minigame(full_moon_event=True)
-                else:
-                    success = self.start_minigame()
+                    if success:
+                        self.obtain_fish(full_moon_event=True)
+                    else:
+                        if self.streak > 0:
+                            print("The fish run and you lost the streak")
+                        self.streak = 0
+                        input("Press Enter to continue...")
+                    break
+                fish_list = list(self.current_fish_list)
+                if self.daily_event in ("Exotic Surge", "Full Moon Night"):
+                    fish_list += EXOTIC_FISH_FULL_MOON
+                selected = self.get_fish_by_weighted_random(fish_list)
+                if not selected:
+                    break
+                success = self.start_minigame(is_seasonal=selected.get('is_seasonal', False))  # [SEASONALS_MINIGAME]
                 if success:
-                    self.obtain_fish(full_moon_event=is_exotic)
+                    self.obtain_fish(fish=selected)
                 else:
-                    if self.streak > 0:
-                        print("The fish run and you lost the streak")
-                    self.streak = 0
+                    if selected.get('is_seasonal'):
+                        if self.streak > 0:
+                            self.streak -= 1
+                    else:
+                        if self.streak > 0:
+                            print("The fish run and you lost the streak")
+                        self.streak = 0
                     input("Press Enter to continue...")
                 break
             else:
@@ -1764,68 +1926,19 @@ class Game:
             input("Press Enter to return to menu")
             return
         self.balance -= cost
-        allowed_rarities = ["Common", "Uncommon", "Rare", "Epic", "Mythical", "Legendary"]
-        base_list = list(self.current_fish_list)
+        fish_list = list(self.current_fish_list)
         if self.daily_event in ("Exotic Surge", "Full Moon Night"):
-            allowed_rarities.append("Exotic")
-            base_list += EXOTIC_FISH_FULL_MOON
-        valid_fish = [
-            f for f in base_list
-            if f.get('rarity') in allowed_rarities
-        ]
+            fish_list += EXOTIC_FISH_FULL_MOON
         caught = []
         total_xp = 0
         for i in range(amount):
             if i > 0 and random.random() < 0.3:
                 print("Autofish failed! The fish escaped.")
                 continue
-            time_of_day = self.get_time_of_day()
-            season = self.get_current_season()
-            filtered = []
-            for fish in valid_fish:
-                allowed_times = fish.get('time_of_day')
-                allowed_seasons = fish.get('seasons')
-                if allowed_times and time_of_day not in allowed_times:
-                    continue
-                if allowed_seasons and season not in allowed_seasons:
-                    continue
-                filtered.append(fish)
-            if not filtered:
-                filtered = valid_fish
-            weights = {
-                'Common': 5,
-                'Uncommon': 3,
-                'Rare': 2,
-                'Epic': 1,
-                'Legendary': 1,
-                'Mythical': 1,
-                'Exotic': 1 if self.daily_event in ("Exotic Surge", "Full Moon Night") else 0,
-            }
-            rare_types = {'Rare', 'Epic', 'Legendary', 'Mythical'}
-            if self.daily_event in ("Exotic Surge", "Full Moon Night"):
-                rare_types.add('Exotic')
-            rare_weighted = []
-            common_weighted = []
-            for fish in filtered:
-                rarity = fish.get('rarity', 'Common')
-                weight = weights.get(rarity, 3)
-                if rarity in rare_types:
-                    rare_weighted.extend([fish] * weight)
-                else:
-                    common_weighted.extend([fish] * weight)
-            if rare_weighted:
-                total_weight = len(rare_weighted) + len(common_weighted)
-                base_chance = len(rare_weighted) / total_weight * 100
-                if self.daily_event == "Streak Madness":
-                    bonus = min(self.streak * 5, 40)
-                else:
-                    bonus = min(self.streak * 2, 20)
-                chance = base_chance + bonus
-                chance = min(chance, 100)
-                pool = rare_weighted if random.randint(1, 100) <= chance else common_weighted
-            else:
-                pool = common_weighted or filtered
-            fish = random.choice(pool).copy()
+            fish = self.get_fish_by_weighted_random(fish_list, fast_mode=True)
+            if not fish:
+                continue
+            fish = fish.copy()
             weight_val = self.generate_weight(fish['name'], fish['rarity'])
             fish['weight'] = round(weight_val, 1)
             if self.current_zone == "Sea":
@@ -1842,6 +1955,7 @@ class Game:
                 'price': fish['price'],
                 'weight': fish['weight'],
                 'zone': self.current_zone,
+                'is_seasonal': fish.get('is_seasonal', False),
             }
             self.inventory.append(entry.copy())
             xp_gain = self.get_xp_by_rarity(fish['rarity'])
@@ -1859,6 +1973,8 @@ class Game:
             self.update_discovery(self.current_zone, fish['name'], fish['weight'], value)
             self.quest_manager.update_quest_progress(self.current_zone, fish['name'], fish['rarity'])
             self.record_catch(entry, xp_gain, new_species=new_species)
+            if entry['is_seasonal']:
+                self.update_seasonal_log(entry['name'], entry['weight'])
             self.update_zone_completion(self.current_zone)
             caught.append(entry)
         self.fast_fishing_price = round(self.fast_fishing_price * 1.005, 4)
@@ -1872,17 +1988,25 @@ class Game:
         print(f"Current streak: {self.streak}")
         input("Press Enter to continue...")
 
-    def start_minigame(self, full_moon_event=False) -> bool:
+    def start_minigame(self, full_moon_event=False, is_seasonal=False) -> bool:
         bar = "--------------------------"  # length 26
         if full_moon_event:
             zone_length = 2
             speed = 0.01
+            margin = 1
         else:
-            zone_length = self.current_zone_catch_length
-            speed = self.get_speed()
+            if is_seasonal:
+                # [SEASONALS_MINIGAME]
+                print("Seasonal Legendary! Catch zone = 2, speed +20%.")
+                zone_length = SEASONAL_MINIGAME_ZONE_LEN
+                speed = self.get_speed() * SEASONAL_MINIGAME_SPEED_MULT
+                margin = SEASONAL_MINIGAME_MARGIN
+            else:
+                zone_length = self.current_zone_catch_length
+                speed = self.get_speed()
+                margin = 1
         if self.daily_event == "Speedy Fisher":
             speed *= 1.3
-        margin = 1
         zone_start = random.randint(5, len(bar) - zone_length)
         zone_end = zone_start + zone_length - 1
         extended_start = max(0, zone_start - margin)
@@ -1920,21 +2044,22 @@ class Game:
             print("\n>> Time's up! The fish escaped!")
         return False
 
-    def obtain_fish(self, full_moon_event=False):
+    def obtain_fish(self, fish: Optional[Dict] = None, full_moon_event=False):
         if full_moon_event:
             fish = random.choice(EXOTIC_FISH_FULL_MOON).copy()
             fish['weight'] = random.randint(1000, 100000)
             price = fish['price']
         else:
-            fish_list = list(self.current_fish_list)
-            if self.daily_event in ("Exotic Surge", "Full Moon Night"):
-                fish_list += EXOTIC_FISH_FULL_MOON
-            fish = self.get_fish_by_weighted_random(fish_list)
             if fish is None:
-                if self.streak > 0:
-                    print("The fish run and you lost the streak")
-                self.streak = 0
-                return
+                fish_list = list(self.current_fish_list)
+                if self.daily_event in ("Exotic Surge", "Full Moon Night"):
+                    fish_list += EXOTIC_FISH_FULL_MOON
+                fish = self.get_fish_by_weighted_random(fish_list)
+                if fish is None:
+                    if self.streak > 0:
+                        print("The fish run and you lost the streak")
+                    self.streak = 0
+                    return
             fish = fish.copy()
             weight = self.generate_weight(fish['name'], fish['rarity'])
             fish['weight'] = round(weight, 1)
@@ -1953,6 +2078,7 @@ class Game:
             'price': fish['price'],
             'weight': weight,
             'zone': self.current_zone,
+            'is_seasonal': fish.get('is_seasonal', False),
         }
         self.inventory.append(self.current_fish.copy())
         xp_gain = self.get_xp_by_rarity(fish['rarity'])
@@ -1971,6 +2097,8 @@ class Game:
         self.update_discovery(self.current_zone, fish['name'], weight, value)
         self.quest_manager.update_quest_progress(self.current_zone, fish['name'], fish['rarity'])
         self.record_catch(self.current_fish, xp_gain, new_species=new_species)
+        if self.current_fish.get('is_seasonal'):
+            self.update_seasonal_log(self.current_fish['name'], weight)
         self.update_zone_completion(self.current_zone)
         self.streak += 1
         print(f"Current streak: {self.streak}")
