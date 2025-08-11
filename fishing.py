@@ -118,6 +118,238 @@ BOSS_CHANCE_CAP = 0.20  # maximum 20% chance
 # Floating Island appearance chance
 FLOATING_ISLAND_DAILY_CHANCE = 0.30
 
+# Rarity ordering for comparisons
+RARITY_ORDER = [
+    "Common",
+    "Uncommon",
+    "Rare",
+    "Epic",
+    "Legendary",
+    "Mythical",
+    "Exotic",
+    "???",
+]
+
+# Daily events list for achievement tracking
+DAILY_EVENT_LIST = [
+    "Double XP Day",
+    "Treasure Hunt",
+    "Speedy Fisher",
+    "Exotic Surge",
+    "Jackpot Sell",
+    "Streak Madness",
+    "Full Moon Night",
+]
+
+
+def default_counters() -> Dict:
+    """Return default structure for lifetime counters."""
+    return {
+        "total_fish": 0,
+        "boss_kills": 0,
+        "sell_value_total": 0.0,
+        "zones_completed": {},
+        "unique_fish_seen": 0,
+        "legendaries": 0,
+        "mythicals": 0,
+        "exotics": 0,
+        "rare_plus": 0,
+        "epics": 0,
+        "fish_per_zone": {},
+        "fish_at_night": 0,
+        "fish_at_day": 0,
+        "fish_in_bad_weather": 0,
+        "quests_completed": 0,
+        "events_caught": [],
+        "days_played": 0,
+    }
+
+
+ACHIEVEMENTS = {
+    # [ACHIEVEMENTS]
+    "net_novice": {
+        "name": "Net Novice",
+        "desc": "Catch 50 fish",
+        "reward": {"money": 500},
+        "title": "Net Novice",
+    },
+    "lake_regular": {
+        "name": "Lake Regular",
+        "desc": "Catch 100 fish in Lake",
+        "reward": {"money": 1000},
+    },
+    "sea_skipper": {
+        "name": "Sea Skipper",
+        "desc": "Catch 100 fish in Sea",
+        "reward": {"money": 1000},
+    },
+    "depth_diver": {
+        "name": "Depth Diver",
+        "desc": "Catch 50 fish in Bathyal",
+        "reward": {"money": 1500},
+    },
+    "mystic_whisperer": {
+        "name": "Mystic Whisperer",
+        "desc": "Catch 25 fish in Mystic Spring",
+        "reward": {"money": 1500},
+    },
+    "trench_tamer": {
+        "name": "Trench Tamer",
+        "desc": "Catch 10 fish in Abyss Trench",
+        "reward": {"money": 2000},
+    },
+    "ancient_voyager": {
+        "name": "Ancient Voyager",
+        "desc": "Catch 10 fish in Ancient Sea",
+        "reward": {"money": 2000},
+    },
+    "skyborne": {
+        "name": "Skyborne",
+        "desc": "Catch 5 fish in Floating Island",
+        "reward": {"money": 2500},
+    },
+    "rare_hunter": {
+        "name": "Rare Hunter",
+        "desc": "Catch 50 Rare+ fish",
+        "reward": {"money": 2000},
+    },
+    "epic_seeker": {
+        "name": "Epic Seeker",
+        "desc": "Catch 25 Epic fish",
+        "reward": {"money": 3000},
+    },
+    "legend_touch": {
+        "name": "Legend Touch",
+        "desc": "Catch 10 Legendary fish",
+        "reward": {"money": 5000},
+    },
+    "myth_maker": {
+        "name": "Myth Maker",
+        "desc": "Catch 5 Mythical fish",
+        "reward": {"money": 7000},
+    },
+    "exotic_whisperer": {
+        "name": "Exotic Whisperer",
+        "desc": "Catch 3 Exotic fish",
+        "reward": {"money": 10000},
+    },
+    "boss_breaker_1": {
+        "name": "Boss Breaker I",
+        "desc": "Defeat 1 boss",
+        "reward": {"money": 2000},
+    },
+    "boss_breaker_2": {
+        "name": "Boss Breaker II",
+        "desc": "Defeat 5 bosses",
+        "reward": {"money": 5000},
+        "title": "Boss Breaker",
+    },
+    "boss_breaker_3": {
+        "name": "Boss Breaker III",
+        "desc": "Defeat 10 bosses",
+        "reward": {"money": 10000},
+    },
+    "treasure_tycoon_1": {
+        "name": "Treasure Tycoon I",
+        "desc": "Earn $100k from sales",
+        "reward": {"money": 2000},
+    },
+    "treasure_tycoon_2": {
+        "name": "Treasure Tycoon II",
+        "desc": "Earn $1M from sales",
+        "reward": {"money": 5000},
+    },
+    "treasure_tycoon_3": {
+        "name": "Treasure Tycoon III",
+        "desc": "Earn $10M from sales",
+        "reward": {"money": 10000},
+        "title": "Tycoon",
+    },
+    "marathon_angler": {
+        "name": "Marathon Angler",
+        "desc": "Play 5 in-game days",
+        "reward": {"money": 1000},
+    },
+    "night_owl": {
+        "name": "Night Owl",
+        "desc": "Catch 30 fish at Night",
+        "reward": {"money": 1500},
+    },
+    "dawn_catcher": {
+        "name": "Dawn Catcher",
+        "desc": "Catch 30 fish at Day",
+        "reward": {"money": 1500},
+    },
+    "storm_proof": {
+        "name": "Storm Proof",
+        "desc": "Catch 10 fish during bad weather",
+        "reward": {"money": 2000},
+    },
+    "quest_newbie": {
+        "name": "Quest Newbie",
+        "desc": "Complete 10 quests",
+        "reward": {"money": 1500},
+    },
+    "quest_artisan": {
+        "name": "Quest Artisan",
+        "desc": "Complete 25 quests",
+        "reward": {"money": 3000},
+        "title": "Quest Artisan",
+    },
+    "lake_curator": {
+        "name": "Lake Curator",
+        "desc": "Complete Lake collection",
+        "reward": {"money": 2000},
+    },
+    "sea_curator": {
+        "name": "Sea Curator",
+        "desc": "Complete Sea collection",
+        "reward": {"money": 2000},
+    },
+    "depths_curator": {
+        "name": "Depths Curator",
+        "desc": "Complete Bathyal collection",
+        "reward": {"money": 3000},
+    },
+    "ancient_curator": {
+        "name": "Ancient Curator",
+        "desc": "Complete Ancient Sea collection",
+        "reward": {"money": 5000},
+        "title": "Curator",
+    },
+    "combo_streaker_1": {
+        "name": "Combo Streaker I",
+        "desc": "Reach a streak of 10",
+        "reward": {"money": 1000},
+    },
+    "combo_streaker_2": {
+        "name": "Combo Streaker II",
+        "desc": "Reach a streak of 25",
+        "reward": {"money": 2500},
+    },
+    "big_haul": {
+        "name": "Big Haul",
+        "desc": "Sell 50 fish at once",
+        "reward": {"money": 3000},
+    },
+    "one_shot_wonder": {
+        "name": "One-Shot Wonder",
+        "desc": "Catch a fish >= 1,000 kg",
+        "reward": {"money": 2000},
+    },
+    "golden_hand": {
+        "name": "Golden Hand",
+        "desc": "Sell fish worth >= $100k",
+        "reward": {"money": 5000},
+    },
+    "event_master": {
+        "name": "Event Master",
+        "desc": "Catch fish in all events",
+        "reward": {"money": 4000},
+    },
+}
+
+
 # --------------------------- Fish data ---------------------------
 
 FISH_LAKE = [
@@ -584,6 +816,13 @@ class Game:
         self.inventory_fish_traps = 0
         self.baits = {"normal": 0, "advanced": 0, "expert": 0, "legend": 0}
         self.active_traps: List[Dict] = []
+        # [RUN_SUMMARY] session fields
+        self.reset_session_stats()
+        # [ACHIEVEMENTS] lifetime progression fields
+        self.achievements: Dict[str, Dict] = {}
+        self.counters: Dict = default_counters()
+        self.current_title: str = ""
+        self.title_inventory: List[str] = []
         # load existing data if any
         self.load_game()
         self.quest_manager = QuestManager(self.loaded_quests)
@@ -619,6 +858,10 @@ class Game:
             'inventoryFishTraps': self.inventory_fish_traps,
             'baits': self.baits,
             'activeTraps': self.active_traps,
+            'achievements': self.achievements,
+            'counters': {**self.counters, 'events_caught': list(self.counters.get('events_caught', []))},
+            'currentTitle': self.current_title,
+            'titleInventory': self.title_inventory,
         }
         data_to_sign = data.copy()
         data['sig'] = compute_save_signature(data_to_sign)
@@ -660,6 +903,14 @@ class Game:
             self.inventory_fish_traps = data.get('inventoryFishTraps', 0)
             self.baits = data.get('baits', {"normal": 0, "advanced": 0, "expert": 0, "legend": 0})
             self.active_traps = data.get('activeTraps', [])
+            self.achievements = data.get('achievements', {})
+            saved_counters = data.get('counters', {})
+            self.counters = default_counters()
+            self.counters.update(saved_counters)
+            self.current_title = data.get('currentTitle', '')
+            self.title_inventory = data.get('titleInventory', [])
+            if isinstance(self.counters.get('events_caught'), list):
+                self.counters['events_caught'] = list(self.counters['events_caught'])
         else:
             # defaults already set
             self.loaded_quests = {}
@@ -808,6 +1059,222 @@ class Game:
         zone_data[fish_name] = entry
         self.discovery[zone] = zone_data
 
+    # [RUN_SUMMARY] initialize per-session stats
+    def reset_session_stats(self):
+        self.session_start_ts = time.time()
+        self.session_fish_count = 0
+        self.session_fish_list: List[Dict] = []
+        self.session_xp_gained = 0
+        self.session_money_earned = 0
+        self.session_best_catch: Optional[Dict] = None
+        self.session_boss_kills = 0
+        self.session_zones_visited = {self.current_zone}
+        self.session_rarest_seen = "Common"
+
+    # [RUN_SUMMARY][ACHIEVEMENTS] record a caught fish
+    def record_catch(self, entry: Dict, xp_gain: int, new_species: bool = False, is_boss: bool = False):
+        self.session_fish_count += 1
+        self.session_fish_list.append(entry.copy())
+        self.session_zones_visited.add(entry['zone'])
+        self.session_xp_gained += xp_gain
+        value = entry['weight'] * entry['price']
+        best_val = -1 if not self.session_best_catch else self.session_best_catch['weight'] * self.session_best_catch['price']
+        if (
+            value > best_val
+            or (
+                value == best_val
+                and RARITY_ORDER.index(entry['rarity']) > RARITY_ORDER.index(self.session_best_catch['rarity'])
+            )
+            or (
+                value == best_val
+                and entry['rarity'] == self.session_best_catch['rarity']
+                and entry['weight'] > self.session_best_catch['weight']
+            )
+        ):
+            self.session_best_catch = entry.copy()
+        if RARITY_ORDER.index(entry['rarity']) > RARITY_ORDER.index(self.session_rarest_seen):
+            self.session_rarest_seen = entry['rarity']
+        if is_boss:
+            self.session_boss_kills += 1
+            self.counters['boss_kills'] += 1
+        # lifetime counters
+        c = self.counters
+        c['total_fish'] += 1
+        c['fish_per_zone'][entry['zone']] = c['fish_per_zone'].get(entry['zone'], 0) + 1
+        rarity = entry['rarity']
+        if rarity in ("Rare", "Epic", "Legendary", "Mythical", "Exotic", "???"):
+            c['rare_plus'] += 1
+        if rarity == "Epic":
+            c['epics'] += 1
+        if rarity == "Legendary":
+            c['legendaries'] += 1
+        if rarity == "Mythical":
+            c['mythicals'] += 1
+        if rarity == "Exotic":
+            c['exotics'] += 1
+        if new_species:
+            c['unique_fish_seen'] += 1
+        tod = self.get_time_of_day()
+        if tod == 'Night':
+            c['fish_at_night'] += 1
+        elif tod == 'Day':
+            c['fish_at_day'] += 1
+        if self.event != 'Nothing':
+            c['fish_in_bad_weather'] += 1
+        if self.daily_event:
+            if self.daily_event not in c['events_caught']:
+                c['events_caught'].append(self.daily_event)
+        if entry['weight'] >= 1000:
+            self.try_unlock('one_shot_wonder', True)
+        self.check_achievements()
+
+    # [ACHIEVEMENTS] mark zone completion
+    def update_zone_completion(self, zone: str):
+        fish_list = [f['name'] for f in ZONE_FISH_MAP.get(zone, []) if f.get('rarity') != '???']
+        zone_data = self.discovery.get(zone, {})
+        if fish_list and all(name in zone_data for name in fish_list):
+            self.counters['zones_completed'][zone] = True
+        self.check_achievements()
+
+    # [RUN_SUMMARY] record sale value
+    def record_sale(self, value: float):
+        self.session_money_earned += value
+        self.counters['sell_value_total'] += value
+        self.check_achievements()
+
+    # [ACHIEVEMENTS] unlocking helper
+    def try_unlock(self, key: str, condition: bool):
+        if not condition:
+            return
+        info = self.achievements.get(key)
+        if info and info.get('unlocked'):
+            return
+        ach = ACHIEVEMENTS.get(key)
+        if not ach:
+            return
+        self.achievements[key] = {"unlocked": True, "timestamp": time.time()}
+        reward = ach.get('reward')
+        reward_desc = ""
+        if isinstance(reward, dict):
+            if 'money' in reward:
+                self.balance += reward['money']
+                reward_desc = f"${reward['money']}"
+            elif 'bait' in reward:
+                bait_type = reward.get('bait')
+                amt = reward.get('amount', 1)
+                self.baits[bait_type] = self.baits.get(bait_type, 0) + amt
+                reward_desc = f"{bait_type.capitalize()} Bait x{amt}"
+        title = ach.get('title')
+        if title and title not in self.title_inventory:
+            self.title_inventory.append(title)
+            reward_desc = f"{reward_desc} | Title: {title}" if reward_desc else f"Title: {title}"
+        print(f"🏆 Achievement Unlocked: \"{ach['name']}\" — Reward: {reward_desc}")
+        time.sleep(2)
+        self.save_game()
+
+    # [ACHIEVEMENTS] evaluate all achievements
+    def check_achievements(self):
+        c = self.counters
+        self.try_unlock('net_novice', c['total_fish'] >= 50)
+        self.try_unlock('lake_regular', c['fish_per_zone'].get('Lake', 0) >= 100)
+        self.try_unlock('sea_skipper', c['fish_per_zone'].get('Sea', 0) >= 100)
+        self.try_unlock('depth_diver', c['fish_per_zone'].get('Bathyal', 0) >= 50)
+        self.try_unlock('mystic_whisperer', c['fish_per_zone'].get('Mystic Spring', 0) >= 25)
+        self.try_unlock('trench_tamer', c['fish_per_zone'].get('Abyss Trench', 0) >= 10)
+        self.try_unlock('ancient_voyager', c['fish_per_zone'].get('Ancient Sea', 0) >= 10)
+        self.try_unlock('skyborne', c['fish_per_zone'].get('Floating Island', 0) >= 5)
+        self.try_unlock('rare_hunter', c['rare_plus'] >= 50)
+        self.try_unlock('epic_seeker', c['epics'] >= 25)
+        self.try_unlock('legend_touch', c['legendaries'] >= 10)
+        self.try_unlock('myth_maker', c['mythicals'] >= 5)
+        self.try_unlock('exotic_whisperer', c['exotics'] >= 3)
+        self.try_unlock('boss_breaker_1', c['boss_kills'] >= 1)
+        self.try_unlock('boss_breaker_2', c['boss_kills'] >= 5)
+        self.try_unlock('boss_breaker_3', c['boss_kills'] >= 10)
+        self.try_unlock('treasure_tycoon_1', c['sell_value_total'] >= 100000)
+        self.try_unlock('treasure_tycoon_2', c['sell_value_total'] >= 1_000_000)
+        self.try_unlock('treasure_tycoon_3', c['sell_value_total'] >= 10_000_000)
+        self.try_unlock('marathon_angler', c['days_played'] >= 5)
+        self.try_unlock('night_owl', c['fish_at_night'] >= 30)
+        self.try_unlock('dawn_catcher', c['fish_at_day'] >= 30)
+        self.try_unlock('storm_proof', c['fish_in_bad_weather'] >= 10)
+        self.try_unlock('quest_newbie', c['quests_completed'] >= 10)
+        self.try_unlock('quest_artisan', c['quests_completed'] >= 25)
+        self.try_unlock('lake_curator', c['zones_completed'].get('Lake'))
+        self.try_unlock('sea_curator', c['zones_completed'].get('Sea'))
+        self.try_unlock('depths_curator', c['zones_completed'].get('Bathyal'))
+        self.try_unlock('ancient_curator', c['zones_completed'].get('Ancient Sea'))
+        self.try_unlock('combo_streaker_1', self.streak >= 10)
+        self.try_unlock('combo_streaker_2', self.streak >= 25)
+        self.try_unlock('event_master', len(c.get('events_caught', [])) >= len(DAILY_EVENT_LIST))
+
+    # [RUN_SUMMARY] display summary on exit
+    def show_run_summary(self):
+        clear_screen()
+        play_time = int(time.time() - self.session_start_ts)
+        m, s = divmod(play_time, 60)
+        h, m = divmod(m, 60)
+        zones = ', '.join(sorted(self.session_zones_visited)) or 'None'
+        print("====== RUN SUMMARY ======")
+        print(f"Play time: {h:02d}:{m:02d}")
+        print(f"Zones visited: {zones}")
+        print(f"Fish caught: {self.session_fish_count} | Boss defeated: {self.session_boss_kills}")
+        print(f"XP gained: {self.session_xp_gained} | Revenue: ${round(self.session_money_earned,2)}")
+        if self.session_best_catch:
+            bc = self.session_best_catch
+            value = bc['weight'] * bc['price']
+            print(
+                f"Best catch: {bc['name']} [{bc['rarity']}] - {bc['weight']} kg → ${round(value,2)}"
+            )
+        else:
+            print("Best catch: None")
+        print(f"Rarest seen: {self.session_rarest_seen}")
+        top = sorted(
+            self.session_fish_list,
+            key=lambda f: f['weight'] * f['price'],
+            reverse=True,
+        )[:5]
+        print("Top 5 catches by value:")
+        for i, f in enumerate(top, 1):
+            val = round(f['weight'] * f['price'], 2)
+            print(f"  {i}) {f['name']} [{f['rarity']}] - {f['weight']} kg → ${val}")
+        input("(Press Enter to continue)")
+        self.reset_session_stats()
+
+    # [ACHIEVEMENTS] menu for achievements and titles
+    def show_achievements_menu(self):
+        while True:
+            clear_screen()
+            unlocked = sum(1 for a in self.achievements.values() if a.get('unlocked'))
+            print(f"Achievements: {unlocked}/{len(ACHIEVEMENTS)} unlocked")
+            print(f"Current Title: {self.current_title or 'None'}\n")
+            for key, ach in ACHIEVEMENTS.items():
+                info = self.achievements.get(key, {})
+                if info.get('unlocked'):
+                    ts = time.strftime('%Y-%m-%d', time.localtime(info['timestamp']))
+                    print(f"[✓] {ach['name']} — {ach['desc']} (Unlocked: {ts})")
+                else:
+                    reward = ach.get('reward')
+                    if isinstance(reward, dict) and 'money' in reward:
+                        rtxt = f"Reward: ${reward['money']}"
+                    elif isinstance(reward, dict) and 'bait' in reward:
+                        rtxt = f"Reward: {reward['bait'].capitalize()} Bait x{reward.get('amount',1)}"
+                    else:
+                        rtxt = "Reward: ?"
+                    print(f"[ ] {ach['name']} — {ach['desc']} ({rtxt})")
+            print("\nAvailable Titles:")
+            for idx, t in enumerate(self.title_inventory, 1):
+                mark = ' (equipped)' if t == self.current_title else ''
+                print(f"{idx}. {t}{mark}")
+            print("0. Back")
+            choice = input("Select title number to equip or 0 to return: ")
+            if choice == '0':
+                break
+            if choice.isdigit() and 1 <= int(choice) <= len(self.title_inventory):
+                self.current_title = self.title_inventory[int(choice) - 1]
+                self.save_game()
+        
+
     # -------------- Boss minigame --------------
     def run_boss_minigame_rounds(self, rounds: int = 5, zone_len: int = 3, speed: float = 0.02) -> bool:
         bar = "--------------------------"
@@ -888,8 +1355,11 @@ class Game:
                 color = self.get_rarity_color("???")
                 print("\n" + color_text(f">> You caught {boss['name']} [???] - {weight} kg!", color))
                 value = round(weight * boss_price, 2)
+                new_species = boss["name"] not in self.discovery.get(self.current_zone, {})
                 self.update_discovery(self.current_zone, boss["name"], weight, value)
                 self.quest_manager.update_quest_progress(self.current_zone, boss["name"], "???")
+                self.record_catch(caught, xp_gain, new_species=new_species, is_boss=True)
+                self.update_zone_completion(self.current_zone)
                 self.save_game()
                 input("Press Enter to continue...")
             else:
@@ -1092,6 +1562,7 @@ class Game:
             self.current_fish_list = FISH_LAKE
             self.current_zone_catch_length = 5
             time.sleep(2)
+        self.session_zones_visited.add(self.current_zone)
         self.quest_manager.show_quests_for_zone(self.current_zone)
         time.sleep(2)
 
@@ -1111,6 +1582,8 @@ class Game:
         self.current_hour = (self.current_hour + 1) % 24
         if self.current_hour == 0 and prev_hour == 23:
             self.current_day += 1
+            self.counters['days_played'] += 1
+            self.check_achievements()
         if self.current_hour < 20:
             self.event = "Nothing"
         elif self.current_hour >= 20:
@@ -1164,6 +1637,8 @@ class Game:
                 if q.is_completed():
                     reward = self.quest_manager.finish_quest(self.current_zone, quest_index)
                     self.balance += reward
+                    self.counters['quests_completed'] += 1
+                    self.check_achievements()
                     self.save_game()
                     print(f"Quest completed! You gained {reward}$")
                     input("Press Enter to continue...")
@@ -1185,6 +1660,9 @@ class Game:
         print("_____MENU_____")
         print(f"Level: {self.level} ({xp_percent}%)")
         print(f"Balance: {round(self.balance, 2)}$")
+        print(f"Title: {self.current_title or 'None'}")
+        unlocked = sum(1 for a in self.achievements.values() if a.get('unlocked'))
+        print(f"Achievements: {unlocked}/{len(ACHIEVEMENTS)} unlocked")
         time_of_day = self.get_time_of_day()
         season = self.get_current_season()
         emoji = SEASON_EMOJI.get(season, "")
@@ -1218,6 +1696,7 @@ class Game:
         print("9. Exit game")
         print("10. Fish Trap Shop   (buy traps & bait)")
         print("11. Fish Trap        (manage traps)")
+        print("12. Achievements & Titles")
 
     # -------------- Fishing --------------
     def start_fishing(self):
@@ -1376,8 +1855,11 @@ class Game:
                 self.balance += bonus_money
                 print(f"💰 Treasure Hunt! You found {bonus_money}$!")
             value = round(fish['weight'] * fish['price'], 2)
+            new_species = fish['name'] not in self.discovery.get(self.current_zone, {})
             self.update_discovery(self.current_zone, fish['name'], fish['weight'], value)
             self.quest_manager.update_quest_progress(self.current_zone, fish['name'], fish['rarity'])
+            self.record_catch(entry, xp_gain, new_species=new_species)
+            self.update_zone_completion(self.current_zone)
             caught.append(entry)
         self.fast_fishing_price = round(self.fast_fishing_price * 1.005, 4)
         self.save_game()
@@ -1485,10 +1967,14 @@ class Game:
         color = 'Red' if fish['rarity'] == 'Exotic' else self.get_rarity_color(fish['rarity'])
         print("\n" + color_text(f">> You caught a {fish['name']} [{fish['rarity']}] - {weight} kg.", color))
         value = round(weight * fish['price'], 2)
+        new_species = fish['name'] not in self.discovery.get(self.current_zone, {})
         self.update_discovery(self.current_zone, fish['name'], weight, value)
         self.quest_manager.update_quest_progress(self.current_zone, fish['name'], fish['rarity'])
+        self.record_catch(self.current_fish, xp_gain, new_species=new_species)
+        self.update_zone_completion(self.current_zone)
         self.streak += 1
         print(f"Current streak: {self.streak}")
+        self.check_achievements()
         if fish['name'] == 'Ancient Key' and not self.has_ancient_key:
             self.has_ancient_key = True
             print(">> You obtained the Ancient Key!")
@@ -1514,6 +2000,7 @@ class Game:
         option = input("\nType 'all' to sell everything, or 'sell x Name' (e.g., sell x2 Carp): ")
         if option == 'all':
             total = sum(f['weight'] * f['price'] for f in self.inventory)
+            fish_count = len(self.inventory)
             jackpot = False
             if self.daily_event == "Jackpot Sell" and random.random() < 0.05:
                 total *= 3
@@ -1525,6 +2012,11 @@ class Game:
                 print(f"\n💎 Jackpot! You earned {total}$ from selling all fish.")
             else:
                 print(f"\nYou earned {total}$ from selling all fish.")
+            self.record_sale(total)
+            if fish_count >= 50:
+                self.try_unlock('big_haul', True)
+            if total >= 100000:
+                self.try_unlock('golden_hand', True)
             self.save_game()
             input("Press Enter to return to menu")
             return
@@ -1556,6 +2048,9 @@ class Game:
                     print(f"\n💎 Jackpot! You sold {amount} {name} for {sell_value}$")
                 else:
                     print(f"\nYou sold {amount} {name} for {sell_value}$")
+                self.record_sale(sell_value)
+                if sell_value >= 100000:
+                    self.try_unlock('golden_hand', True)
                 self.save_game()
             input("Press Enter to return to menu")
             return
@@ -1889,6 +2384,7 @@ class Game:
                         }
                         self.inventory.append(entry.copy())
                         value = round(weight * price, 2)
+                        new_species = entry['name'] not in self.discovery.get(zone, {})
                         self.update_discovery(zone, entry['name'], weight, value)
                         xp_gain = boss_entry.get('xp', 0)
                         if self.daily_event == 'Double XP Day':
@@ -1896,6 +2392,8 @@ class Game:
                         self.xp += xp_gain
                         total_xp += xp_gain
                         self.quest_manager.update_quest_progress(zone, entry['name'], '???')
+                        self.record_catch(entry, xp_gain, new_species=new_species, is_boss=True)
+                        self.update_zone_completion(zone)
                         results.append(entry)
                         continue
                 filtered = [f for f in fish_list if f['rarity'] == 'Exotic']
@@ -1929,6 +2427,7 @@ class Game:
             }
             self.inventory.append(entry.copy())
             value = round(fish['weight'] * price, 2)
+            new_species = fish['name'] not in self.discovery.get(zone, {})
             self.update_discovery(zone, fish['name'], fish['weight'], value)
             xp_gain = self.get_xp_by_rarity(fish['rarity'])
             if self.daily_event == 'Double XP Day':
@@ -1936,6 +2435,8 @@ class Game:
             self.xp += xp_gain
             total_xp += xp_gain
             self.quest_manager.update_quest_progress(zone, fish['name'], fish['rarity'])
+            self.record_catch(entry, xp_gain, new_species=new_species)
+            self.update_zone_completion(zone)
             results.append(entry)
         self.check_level_up()
         return results, total_xp
@@ -1944,7 +2445,7 @@ class Game:
     def run(self):
         while True:
             self.show_menu()
-            choice = input("Pick your choice (1-11): ")
+            choice = input("Pick your choice (1-12): ")
             if choice == '1':
                 self.start_fishing()
                 self.advance_time()
@@ -1964,11 +2465,14 @@ class Game:
             elif choice == '8':
                 self.show_quest_menu()
             elif choice == '9':
+                self.show_run_summary()
                 break
             elif choice == '10':
                 self.bait_trap_shop_menu()
             elif choice == '11':
                 self.fish_trap_menu()
+            elif choice == '12':
+                self.show_achievements_menu()
             elif choice == 'admin':
                 self.balance += 1000000000
                 print("🛠️ Admin mode activated! You received 1,000,000,000$")
