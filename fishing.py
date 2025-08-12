@@ -1957,7 +1957,7 @@ class Game:
             clear_screen()
             print("--- Bank ---")
             print(f"Balance: {round(self.balance, 2)}$")
-            action = input("(P) Pay, (R) Receive, (B) Back: ").strip().upper()
+            action = input("(P) Pay, (B) Back: ").strip().upper()
             if action == "P":
                 try:
                     amount = int(input("Amount to send: "))
@@ -1972,7 +1972,6 @@ class Game:
                 code = bank.create_transfer(user_id, amount, "fishing", "casino")
                 self.balance -= amount
                 self.save_game()
-                print(f"Transfer code: {code}")
                 while True:
                     print("1) Return to main menu")
                     print("2) Go to casino")
@@ -1983,18 +1982,6 @@ class Game:
                     if choice == "1":
                         return
                     print("Invalid choice.")
-            elif action == "R":
-                code = input("Enter receive code: ").strip().upper()
-                try:
-                    amount = bank.claim_transfer(code, "fishing", user_id)
-                except Exception as e:
-                    print(f"Error: {e}")
-                    time.sleep(1)
-                    continue
-                self.balance += amount
-                self.save_game()
-                print(f"Received {amount}$")
-                input("Press Enter to continue...")
             elif action == "B":
                 break
             else:
@@ -2787,7 +2774,32 @@ class Game:
 # --------------------------- Main entry ---------------------------
 
 def main():
+    args = sys.argv[1:]
+    autoclaim_code = None
+    autoclaim_user = None
+    i = 0
+    while i < len(args):
+        if args[i] == "--autoclaim" and i + 1 < len(args):
+            autoclaim_code = args[i + 1].upper()
+            i += 2
+        elif args[i] == "--user" and i + 1 < len(args):
+            autoclaim_user = args[i + 1]
+            i += 2
+        else:
+            i += 1
+
     game = Game()
+
+    if autoclaim_code and autoclaim_user:
+        try:
+            amount, from_app = bank.claim_transfer(autoclaim_code, expect_to_app="fishing", user_id=autoclaim_user)
+        except Exception as e:
+            print(f"Auto-claim failed: {e}")
+        else:
+            game.balance += amount
+            game.save_game()
+            print(f"Auto-received ${amount} from {from_app}.")
+
     game.run()
 
 if __name__ == '__main__':

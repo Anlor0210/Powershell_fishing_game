@@ -59,7 +59,8 @@ def create_transfer(user_id: str, amount: int, from_app: str, to_app: str) -> st
         }
         return code
 
-def claim_transfer(code: str, expect_to_app: str, user_id: str) -> int:
+def claim_transfer(code: str, expect_to_app: str, user_id: str) -> tuple[int, str]:
+    """Claim a transfer code and return the amount and originating app."""
     with _access_bank() as bank:
         t = bank['transfers'].get(code)
         if not t:
@@ -71,7 +72,7 @@ def claim_transfer(code: str, expect_to_app: str, user_id: str) -> int:
         if t['user_id'] != user_id:
             raise ValueError('User mismatch')
         t['claimed'] = True
-        return t['amount']
+        return t['amount'], t['from_app']
 
 def peek_transfer(code: str):
     with _lock:
