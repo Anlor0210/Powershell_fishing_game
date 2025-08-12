@@ -1978,7 +1978,7 @@ class Game:
                     print("2) Go to casino")
                     choice = input("Choose: ").strip()
                     if choice == "2":
-                        subprocess.Popen([sys.executable, "casino.py"])
+                        subprocess.Popen([sys.executable, "casino.py", "--autoclaim", code, "--user", user_id])
                         sys.exit(0)
                     if choice == "1":
                         return

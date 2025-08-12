@@ -165,8 +165,27 @@ def bank_menu(wallet: int, user_id: str) -> int:
 
 
 def main() -> None:
+    args = sys.argv[1:]
+    autoclaim_code = None
+    autoclaim_user = None
+    for i, arg in enumerate(args):
+        if arg == "--autoclaim" and i + 1 < len(args):
+            autoclaim_code = args[i + 1].upper()
+        elif arg == "--user" and i + 1 < len(args):
+            autoclaim_user = args[i + 1]
+
     wallet = load_wallet()
-    user_id = "player1"
+    user_id = autoclaim_user or "player1"
+
+    if autoclaim_code and autoclaim_user:
+        try:
+            amount = bank.claim_transfer(autoclaim_code, expect_to_app="casino", user_id=autoclaim_user)
+        except Exception as e:
+            print(f"Auto-claim failed: {e}")
+        else:
+            wallet += amount
+            save_wallet(wallet)
+            print(f"Auto-received ${amount} from Fishing.")
     while True:
         print(f"\n--- Casino ---\nWallet: {wallet}$")
         print("  1) One or Two")
