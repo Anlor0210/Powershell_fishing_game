@@ -1973,9 +1973,16 @@ class Game:
                 self.balance -= amount
                 self.save_game()
                 print(f"Transfer code: {code}")
-                print("Launching casino...")
-                subprocess.Popen([sys.executable, "casino.py"])
-                sys.exit(0)
+                while True:
+                    print("1) Return to main menu")
+                    print("2) Go to casino")
+                    choice = input("Choose: ").strip()
+                    if choice == "2":
+                        subprocess.Popen([sys.executable, "casino.py"])
+                        sys.exit(0)
+                    if choice == "1":
+                        return
+                    print("Invalid choice.")
             elif action == "R":
                 code = input("Enter receive code: ").strip().upper()
                 try:
