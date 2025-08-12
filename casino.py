@@ -128,7 +128,6 @@ def bank_menu(wallet: int, user_id: str) -> int:
     while True:
         print(f"\n--- Bank ---\nWallet: {wallet}$")
         print("(P) Pay to Fishing")
-        print("(R) Receive to Casino")
         print("(Q) Back")
         action = input("Choose: ").strip().upper()
         if action == "P":
@@ -143,20 +142,8 @@ def bank_menu(wallet: int, user_id: str) -> int:
             wallet -= amount
             save_wallet(wallet)
             code = bank.create_transfer(user_id, amount, from_app="casino", to_app="fishing")
-            print(f"Transfer code: {code}")
-            print(f"New wallet: {wallet}$")
-            subprocess.Popen([sys.executable, "fishing.py"])
+            subprocess.Popen([sys.executable, "fishing.py", "--autoclaim", code, "--user", user_id])
             sys.exit(0)
-        elif action == "R":
-            code = input("Enter code: ").strip().upper()
-            try:
-                amount = bank.claim_transfer(code, expect_to_app="casino", user_id=user_id)
-            except Exception as e:
-                print(f"Error: {e}")
-                continue
-            wallet += amount
-            save_wallet(wallet)
-            print(f"Received {amount}$. Wallet: {wallet}$")
         elif action == "Q":
             break
         else:
@@ -179,19 +166,19 @@ def main() -> None:
 
     if autoclaim_code and autoclaim_user:
         try:
-            amount = bank.claim_transfer(autoclaim_code, expect_to_app="casino", user_id=autoclaim_user)
+            amount, from_app = bank.claim_transfer(autoclaim_code, expect_to_app="casino", user_id=autoclaim_user)
         except Exception as e:
             print(f"Auto-claim failed: {e}")
         else:
             wallet += amount
             save_wallet(wallet)
-            print(f"Auto-received ${amount} from Fishing.")
+            print(f"Auto-received ${amount} from {from_app}.")
     while True:
         print(f"\n--- Casino ---\nWallet: {wallet}$")
         print("  1) One or Two")
         print("  2) Horse Race (ASCII)")
         print("  3) RANDOM (1000$ spin)")
-        print("  4) Bank (Pay / Receive)")
+        print("  4) Bank (Pay)")
         print("  5) Return to Fishing")
         print("  6) Exit")
         choice = input("Choose: ").strip()
