@@ -46,6 +46,28 @@ COLORS = {
 def color_text(text: str, color: str) -> str:
     return f"{COLORS.get(color, COLORS['White'])}{text}{COLORS['Reset']}"
 
+
+def prompt_int(label: str, min_value: Optional[int] = None, max_value: Optional[int] = None) -> int:
+    """Prompt the user for an integer within optional bounds."""
+    while True:
+        try:
+            value = int(input(label))
+        except ValueError:
+            print("Enter a valid number.")
+            continue
+        if min_value is not None and value < min_value:
+            print(f"Value must be >= {min_value}.")
+            continue
+        if max_value is not None and value > max_value:
+            print(f"Value must be <= {max_value}.")
+            continue
+        return value
+
+
+def launch_other_game(target: str) -> None:
+    """Launch another python script without waiting for it to finish."""
+    subprocess.Popen([sys.executable, target])
+
 # Season helpers
 SEASONS = ["Spring", "Summer", "Autumn", "Winter"]
 SEASON_EMOJI = {
@@ -1937,19 +1959,20 @@ class Game:
             f"Bait N:{self.baits['normal']} A:{self.baits['advanced']} "
             f"E:{self.baits['expert']} L:{self.baits['legend']}"
         )
-        print("1. Fishing")
-        print("2. Fast Fishing (Catch multiple fish at once)")
-        print("3. Zone")
-        print("4. Sell fish")
-        print("5. Inventory")
-        print("6. Shop")
-        print("7. Discovery Book")
-        print("8. Quest")
-        print("9. Exit game")
-        print("10. Fish Trap Shop   (buy traps & bait)")
-        print("11. Fish Trap        (manage traps)")
-        print("12. Achievements & Titles")
-        print("13. Bank")
+        print("1. Start Fishing")
+        print("2. Fast Fishing")
+        print("3. Quests")
+        print("4. Inventory")
+        print("5. Shop")
+        print("6. Discovery Log")
+        print("7. Travel / Zones")
+        print("8. Settings / Daily info")
+        print("9. Statistics / Achievements")
+        print("10. BANK (Pay / Receive)")
+        print("11. One or Two")
+        print("12. Horse Race")
+        print("13. RANDOM")
+        print("0. Exit")
 
     def bank_menu(self):
         user_id = "player1"
@@ -1959,22 +1982,13 @@ class Game:
             print(f"Balance: {round(self.balance, 2)}$")
             action = input("(P) Pay, (R) Receive, (B) Back: ").strip().upper()
             if action == "P":
-                try:
-                    amount = int(input("Amount to send: "))
-                except ValueError:
-                    print("Invalid amount.")
-                    time.sleep(1)
-                    continue
-                if amount <= 0 or amount > self.balance:
-                    print("Invalid amount.")
-                    time.sleep(1)
-                    continue
+                amount = prompt_int("Amount to send: ", 1, int(self.balance))
                 code = bank.create_transfer(user_id, amount, "fishing", "casino")
                 self.balance -= amount
                 self.save_game()
                 print(f"Transfer code: {code}")
                 print("Launching casino...")
-                subprocess.Popen([sys.executable, "casino.py"])
+                launch_other_game("casino.py")
                 sys.exit(0)
             elif action == "R":
                 code = input("Enter receive code: ").strip().upper()
@@ -1993,6 +2007,23 @@ class Game:
             else:
                 print("Invalid choice.")
                 time.sleep(1)
+
+    def show_daily_info(self):
+        clear_screen()
+        time_of_day = self.get_time_of_day()
+        season = self.get_current_season()
+        emoji = SEASON_EMOJI.get(season, "")
+        print("--- Daily Info ---")
+        print(f"Balance: {round(self.balance, 2)}$")
+        print(f"Time: {self.current_hour:02d}:00 ({time_of_day})")
+        print(f"Day: {self.current_day} | Season: {season} {emoji}")
+        print(f"Event: {self.event}")
+        if self.daily_event is None:
+            print("Today's Event: Normal Day")
+        else:
+            desc = DAILY_EVENT_EFFECTS.get(self.daily_event, "")
+            print(f"Today's Event: {self.daily_event} – {desc}")
+        input("Press Enter to return...")
 
     # -------------- Fishing --------------
     def start_fishing(self):
@@ -2738,7 +2769,7 @@ class Game:
     def run(self):
         while True:
             self.show_menu()
-            choice = input("Pick your choice (1-12): ")
+            choice = input("Pick your choice (1-13, 0 to exit): ")
             if choice == '1':
                 self.start_fishing()
                 self.advance_time()
@@ -2746,28 +2777,28 @@ class Game:
                 self.fast_fishing()
                 self.advance_time()
             elif choice == '3':
-                self.choose_zone()
-            elif choice == '4':
-                self.sell_fish()
-            elif choice == '5':
-                self.show_inventory()
-            elif choice == '6':
-                self.show_shop()
-            elif choice == '7':
-                self.show_discovery_book()
-            elif choice == '8':
                 self.show_quest_menu()
+            elif choice == '4':
+                self.show_inventory()
+            elif choice == '5':
+                self.show_shop()
+            elif choice == '6':
+                self.show_discovery_book()
+            elif choice == '7':
+                self.choose_zone()
+            elif choice == '8':
+                self.show_daily_info()
             elif choice == '9':
+                self.show_achievements_menu()
+            elif choice == '10':
+                self.bank_menu()
+            elif choice in ('11', '12', '13'):
+                print(f"Wallet: {round(self.balance, 2)}$")
+                print("This mini-game is in casino. Launching casino...")
+                launch_other_game("casino.py")
+            elif choice == '0':
                 self.show_run_summary()
                 break
-            elif choice == '10':
-                self.bait_trap_shop_menu()
-            elif choice == '11':
-                self.fish_trap_menu()
-            elif choice == '12':
-                self.show_achievements_menu()
-            elif choice == '13':
-                self.bank_menu()
             elif choice == 'admin':
                 self.balance += 1000000000
                 print("🛠️ Admin mode activated! You received 1,000,000,000$")
