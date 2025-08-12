@@ -10,6 +10,8 @@ import sys
 import select
 import hashlib
 import hmac
+import subprocess
+import bank
 from typing import Dict, List, Optional
 from dataclasses import dataclass, asdict
 try:
@@ -1947,6 +1949,50 @@ class Game:
         print("10. Fish Trap Shop   (buy traps & bait)")
         print("11. Fish Trap        (manage traps)")
         print("12. Achievements & Titles")
+        print("13. Bank")
+
+    def bank_menu(self):
+        user_id = "player1"
+        while True:
+            clear_screen()
+            print("--- Bank ---")
+            print(f"Balance: {round(self.balance, 2)}$")
+            action = input("(P) Pay, (R) Receive, (B) Back: ").strip().upper()
+            if action == "P":
+                try:
+                    amount = int(input("Amount to send: "))
+                except ValueError:
+                    print("Invalid amount.")
+                    time.sleep(1)
+                    continue
+                if amount <= 0 or amount > self.balance:
+                    print("Invalid amount.")
+                    time.sleep(1)
+                    continue
+                code = bank.create_transfer(user_id, amount, "fishing", "casino")
+                self.balance -= amount
+                self.save_game()
+                print(f"Transfer code: {code}")
+                print("Launching casino...")
+                subprocess.Popen([sys.executable, "casino.py"])
+                sys.exit(0)
+            elif action == "R":
+                code = input("Enter receive code: ").strip().upper()
+                try:
+                    amount = bank.claim_transfer(code, "fishing", user_id)
+                except Exception as e:
+                    print(f"Error: {e}")
+                    time.sleep(1)
+                    continue
+                self.balance += amount
+                self.save_game()
+                print(f"Received {amount}$")
+                input("Press Enter to continue...")
+            elif action == "B":
+                break
+            else:
+                print("Invalid choice.")
+                time.sleep(1)
 
     # -------------- Fishing --------------
     def start_fishing(self):
@@ -2720,6 +2766,8 @@ class Game:
                 self.fish_trap_menu()
             elif choice == '12':
                 self.show_achievements_menu()
+            elif choice == '13':
+                self.bank_menu()
             elif choice == 'admin':
                 self.balance += 1000000000
                 print("🛠️ Admin mode activated! You received 1,000,000,000$")
