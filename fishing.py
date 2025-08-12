@@ -52,6 +52,81 @@ SEASON_EMOJI = {
     "Autumn": "🍂",
     "Winter": "❄️",
 }
+
+# [SEASONAL_ZONE_DATA]
+SEASONAL_ZONES = {
+    "Spring": {
+        "id": "Spring Grove",
+        "desc": "Blooming waters full of life.",
+        "fish": [
+            {"name": "Blossom Minnow", "rarity": "Common", "price": 60, "xp": 6},
+            {"name": "Petal Carp", "rarity": "Common", "price": 65, "xp": 6},
+            {"name": "Willow Perch", "rarity": "Common", "price": 70, "xp": 7},
+            {"name": "Sakura Bream", "rarity": "Uncommon", "price": 140, "xp": 12},
+            {"name": "Spring Chub", "rarity": "Uncommon", "price": 160, "xp": 14},
+            {"name": "Verde Pike", "rarity": "Rare", "price": 360, "xp": 35},
+            {"name": "Bloom Trout", "rarity": "Epic", "price": 560, "xp": 65},
+            {"name": "Spirit Koi of Dawn", "rarity": "Mythical", "price": 900, "xp": 120},
+            {"name": "Sunray Bass", "rarity": "Legendary", "price": 1800, "xp": 220},
+            {"name": "Sakura Koi (Seasonal)", "rarity": "Legendary", "price": 2600, "xp": 300},
+        ],
+    },
+    "Summer": {
+        "id": "Summer Maelstrom",
+        "desc": "Warm swirling currents.",
+        "fish": [
+            {"name": "Warmwater Bluegill", "rarity": "Common", "price": 65, "xp": 6},
+            {"name": "Golden Tilapia", "rarity": "Common", "price": 70, "xp": 7},
+            {"name": "Sun Perch", "rarity": "Common", "price": 75, "xp": 7},
+            {"name": "Azure Mackerel", "rarity": "Uncommon", "price": 170, "xp": 15},
+            {"name": "Tropic Snapper", "rarity": "Uncommon", "price": 180, "xp": 16},
+            {"name": "Heatwave Barracuda", "rarity": "Rare", "price": 420, "xp": 40},
+            {"name": "Solar Swordfish", "rarity": "Epic", "price": 620, "xp": 70},
+            {"name": "Mirage Eel", "rarity": "Mythical", "price": 1000, "xp": 140},
+            {"name": "Sunmarrow Tuna", "rarity": "Legendary", "price": 1900, "xp": 230},
+            {"name": "Sunray Marlin (Seasonal)", "rarity": "Legendary", "price": 3000, "xp": 360},
+        ],
+    },
+    "Autumn": {
+        "id": "Autumn Mire",
+        "desc": "Foggy, leaf-strewn shallows.",
+        "fish": [
+            {"name": "Copper Dace", "rarity": "Common", "price": 60, "xp": 6},
+            {"name": "Maple Roach", "rarity": "Common", "price": 65, "xp": 6},
+            {"name": "Amber Smelt", "rarity": "Common", "price": 70, "xp": 7},
+            {"name": "Harvest Catfish", "rarity": "Uncommon", "price": 160, "xp": 14},
+            {"name": "Russet Trout", "rarity": "Uncommon", "price": 175, "xp": 16},
+            {"name": "Crimson Salmon", "rarity": "Rare", "price": 430, "xp": 42},
+            {"name": "Fog Pike", "rarity": "Epic", "price": 620, "xp": 70},
+            {"name": "Wisp Carp", "rarity": "Mythical", "price": 1050, "xp": 150},
+            {"name": "Equinox Sturgeon", "rarity": "Legendary", "price": 2000, "xp": 240},
+            {"name": "Harvest Leviathanling (Seasonal)", "rarity": "Legendary", "price": 2900, "xp": 360},
+        ],
+    },
+    "Winter": {
+        "id": "Winter Fjord",
+        "desc": "Frozen depths with lurking predators.",
+        "fish": [
+            {"name": "Ice Minnow", "rarity": "Common", "price": 65, "xp": 6},
+            {"name": "Frost Perch", "rarity": "Common", "price": 70, "xp": 7},
+            {"name": "Pale Smelt", "rarity": "Common", "price": 75, "xp": 7},
+            {"name": "Glacier Herring", "rarity": "Uncommon", "price": 170, "xp": 15},
+            {"name": "Snow Bream", "rarity": "Uncommon", "price": 185, "xp": 16},
+            {"name": "Hoarfrost Pike", "rarity": "Rare", "price": 450, "xp": 45},
+            {"name": "Polar Marlin", "rarity": "Epic", "price": 650, "xp": 75},
+            {"name": "Ice Wyrm Eel", "rarity": "Mythical", "price": 1100, "xp": 160},
+            {"name": "Glacial Shark", "rarity": "Legendary", "price": 2100, "xp": 260},
+            {"name": "Frost Dragonfish (Seasonal)", "rarity": "Legendary", "price": 3200, "xp": 380},
+        ],
+    },
+}
+
+# [SEASONAL_ZONE]
+SEASONAL_ZONE_SAFE_FALLBACK = "Lake"
+SEASONAL_ZONE_CATCH_LEN = 4
+SEASONAL_LEGENDARY_CATCH_LEN = 2
+SEASONAL_LEGENDARY_SPEED_MULT = 1.20
+
 # [SEASONALS]
 SEASONAL_BASE_CHANCE = 0.008   # 0.8% per bite if zone+season matches
 SEASONAL_BOOST_EXPERT = 0.015
@@ -1639,7 +1714,15 @@ class Game:
         print("5. Abyss Trench (Need Submarine Upgrade 01)")
         print("6. Ancient Sea (Need Submarine Upgrade 02)")
         print("7. Floating Island (Need Floating Key; 12–16h if visible)")
-        choice = input("Pick your choice (1-7): ")
+        option_max = 7
+        seasonal_choice = None
+        current_season = self.get_current_season()  # [SEASONAL_ZONE]
+        seasonal_zone = SEASONAL_ZONES.get(current_season)
+        if seasonal_zone:
+            option_max += 1
+            seasonal_choice = str(option_max)
+            print(f"{option_max}. {seasonal_zone['id']} (Seasonal Zone) — {seasonal_zone['desc']}")
+        choice = input(f"Pick your choice (1-{option_max}): ")
         if choice == "1":
             if not self.has_boat:
                 print("You don't have a boat to access Sea zone.")
@@ -1703,6 +1786,13 @@ class Game:
             self.current_fish_list = FISH_FLOATING_ISLAND
             self.current_zone_catch_length = 2
             print("You reached the Floating Island. Minigame is much harder!")
+        elif seasonal_choice and choice == seasonal_choice:  # [SEASONAL_ZONE]
+            self.current_zone = seasonal_zone['id']
+            self.current_fish_list = seasonal_zone['fish']
+            self.current_zone_catch_length = SEASONAL_ZONE_CATCH_LEN
+            print(
+                f"You venture into {seasonal_zone['id']}. Catch zone length set to {SEASONAL_ZONE_CATCH_LEN}."
+            )
         else:
             print("Invalid choice, defaulting to Lake.")
             self.current_zone = "Lake"
@@ -1726,6 +1816,7 @@ class Game:
 
     def advance_time(self):
         prev_hour = self.current_hour
+        prev_season = self.get_current_season()  # [SEASONAL_ZONE]
         self.current_hour = (self.current_hour + 1) % 24
         if self.current_hour == 0 and prev_hour == 23:
             self.current_day += 1
@@ -1741,6 +1832,18 @@ class Game:
                     self.event = "Nothing"
         self.roll_daily_event_if_needed()
         self.update_floating_island_state()
+        new_season = self.get_current_season()  # [SEASONAL_ZONE]
+        if new_season != prev_season:
+            prev_zone = SEASONAL_ZONES.get(prev_season)
+            if prev_zone and self.current_zone == prev_zone['id']:
+                self.current_zone = SEASONAL_ZONE_SAFE_FALLBACK
+                if self.current_zone == "Lake":
+                    self.current_fish_list = FISH_LAKE
+                    self.current_zone_catch_length = 5
+                else:
+                    self.current_fish_list = FISH_SEA
+                    self.current_zone_catch_length = 3
+                print("The seasonal waters recede. You return to safer shores.")
 
     # -------------- Quests --------------
     def show_quest_menu(self):
@@ -1892,11 +1995,22 @@ class Game:
                 selected = self.get_fish_by_weighted_random(fish_list)
                 if not selected:
                     break
-                success = self.start_minigame(is_seasonal=selected.get('is_seasonal', False))  # [SEASONALS_MINIGAME]
+                in_seasonal = any(
+                    self.current_zone == z['id'] for z in SEASONAL_ZONES.values()
+                )  # [SEASONAL_ZONE]
+                is_seasonal_leg = (
+                    in_seasonal
+                    and selected.get('rarity') == 'Legendary'
+                    and '(Seasonal)' in selected.get('name', '')
+                )
+                success = self.start_minigame(
+                    is_seasonal=selected.get('is_seasonal', False),
+                    seasonal_legendary=is_seasonal_leg,
+                )
                 if success:
                     self.obtain_fish(fish=selected)
                 else:
-                    if selected.get('is_seasonal'):
+                    if selected.get('is_seasonal') or is_seasonal_leg:
                         if self.streak > 0:
                             self.streak -= 1
                     else:
@@ -1988,14 +2102,19 @@ class Game:
         print(f"Current streak: {self.streak}")
         input("Press Enter to continue...")
 
-    def start_minigame(self, full_moon_event=False, is_seasonal=False) -> bool:
+    def start_minigame(self, full_moon_event=False, is_seasonal=False, seasonal_legendary=False) -> bool:
         bar = "--------------------------"  # length 26
         if full_moon_event:
             zone_length = 2
             speed = 0.01
             margin = 1
         else:
-            if is_seasonal:
+            if seasonal_legendary:  # [SEASONAL_ZONE]
+                print("Seasonal Legendary Encounter! Catch zone = 2, speed +20%.")
+                zone_length = SEASONAL_LEGENDARY_CATCH_LEN
+                speed = self.get_speed() * SEASONAL_LEGENDARY_SPEED_MULT
+                margin = 1
+            elif is_seasonal:
                 # [SEASONALS_MINIGAME]
                 print("Seasonal Legendary! Catch zone = 2, speed +20%.")
                 zone_length = SEASONAL_MINIGAME_ZONE_LEN
